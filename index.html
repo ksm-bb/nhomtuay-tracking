@@ -6,19 +6,17 @@
   <title>Nhomtuay Tracking System</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
-  
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;700;900&display=swap');
     
-    /* รีเซ็ตหน้าจอให้พอดีเป๊ะ */
     html, body { 
       font-family: 'Mitr', sans-serif; 
       margin: 0; 
       padding: 0;
       height: 100%;
-      overflow: hidden; /* ล็อกไม่ให้หน้าเว็บหลักเลื่อน */
+      overflow: hidden; 
     }
     
     .bg-striped { 
@@ -46,11 +44,39 @@
       opacity: 0.6; 
     }
     
+
     .lace-mask {
-      -webkit-mask-box-image-source: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Crect x='10' y='10' width='40' height='40' fill='black'/%3E%3Ccircle cx='10' cy='10' r='10' fill='black'/%3E%3Ccircle cx='30' cy='10' r='10' fill='black'/%3E%3Ccircle cx='50' cy='10' r='10' fill='black'/%3E%3Ccircle cx='10' cy='30' r='10' fill='black'/%3E%3Ccircle cx='50' cy='30' r='10' fill='black'/%3E%3Ccircle cx='10' cy='50' r='10' fill='black'/%3E%3Ccircle cx='30' cy='50' r='10' fill='black'/%3E%3Ccircle cx='50' cy='50' r='10' fill='black'/%3E%3C/svg%3E");
-      -webkit-mask-box-image-slice: 20 fill;
-      -webkit-mask-box-image-width: 20px;
-      -webkit-mask-box-image-repeat: round;
+      position: relative;
+      background-color: #F291B5;
+      border-radius: 12px; 
+    }
+    .lace-mask::before {
+      content: "";
+      position: absolute;
+   
+      top: -10px; 
+      bottom: -10px; 
+      left: -10px; 
+      right: -10px;
+ 
+      background-image: 
+        radial-gradient(circle, #F291B5 10px, transparent 10.5px),
+        radial-gradient(circle, #F291B5 10px, transparent 10.5px),
+        radial-gradient(circle, #F291B5 10px, transparent 10.5px),
+        radial-gradient(circle, #F291B5 10px, transparent 10.5px);
+      background-size: 20px 20px;
+  
+      background-position: 
+        top 0 left 0, 
+        bottom 0 left 0, 
+        top 0 left 0, 
+        top 0 right 0;
+      background-repeat: 
+        repeat-x, 
+        repeat-x, 
+        repeat-y, 
+        repeat-y;
+      z-index: -1; 
     }
 
     .marquee-wrapper { width: 100%; overflow: hidden; white-space: nowrap; display: flex; align-items: center; }
@@ -84,10 +110,9 @@
       ChevronRight, Megaphone, Star, ShoppingBag, PlaneLanding, Truck, Gift, 
       ChevronDown, MousePointer2, Warehouse, PackageCheck, CheckCircle2, Settings, 
       Lock, MessageSquare, LogOut, Info, Save, MapPin, Loader2 
-    } from 'https://esm.sh/lucide-react';
+    } from 'https://esm.sh/lucide-react?deps=react@18,react-dom@18';
 
-    // ✨ นำ URL จาก Google Apps Script มาใส่ตรงนี้ ✨
-    const API_URL = "https://script.google.com/macros/s/AKfycbwTcMDA_4TEg9nFmnlSsfLZFVynk7gmOLQXK3HfxuGD9JQwgIapOEnwq9Lfj2iNfZdyDg/exec"; 
+      const API_URL = "https://script.google.com/macros/s/AKfycbx5qX81aNnyrY08yvIKBweiljjKJ2iLkJ7C1n0yuBbZzzp_7LtZqwbY2s-iElP2yLFeLg/exec"; 
 
     const MyCustomStar = ({ className, size = 24, color = "#FFB7D5", opacity = 1 }) => (
       <svg width={size} height={size} viewBox="0 0 24 24" fill={color} style={{ opacity }} className={`animate-twinkle ${className}`} xmlns="http://www.w3.org/2000/svg">
@@ -279,11 +304,11 @@
       };
 
       return (
-        <div className="h-full bg-striped font-sans text-[#7A6B72] flex items-center justify-center overflow-hidden p-0 sm:p-6">
-          <div className="w-full max-w-[420px] h-[100dvh] sm:h-[850px] drop-shadow-[0_15px_35px_rgba(255,183,213,0.35)] relative flex flex-col lace-mask bg-[#F291B5]">
+        <div className="min-h-[100dvh] bg-striped font-sans text-[#7A6B72] flex items-center justify-center overflow-hidden p-3 sm:p-6">
+          <div className="w-full max-w-[420px] h-[calc(100dvh-24px)] sm:h-[850px] drop-shadow-[0_15px_35px_rgba(255,183,213,0.35)] relative flex flex-col lace-mask">
             
-            <div className="absolute inset-0 bg-white/10 backdrop-blur-[12px] pointer-events-none z-0"></div>
-            <div className="absolute inset-0 polka-dot-overlay pointer-events-none z-0"></div>
+            <div className="absolute inset-0 bg-white/10 backdrop-blur-[12px] pointer-events-none z-0 rounded-[12px]"></div>
+            <div className="absolute inset-0 polka-dot-overlay pointer-events-none z-0 rounded-[12px]"></div>
             
             <MyCustomStar className="absolute top-[10%] left-[8%] pointer-events-none z-0" size={24} color="#ffffff" opacity={0.5} />
             <MyCustomStar className="absolute top-[18%] right-[15%] pointer-events-none z-0" size={16} color="#ffffff" opacity={0.4} />
@@ -297,19 +322,23 @@
             <div className="absolute inset-[16px] sm:inset-[24px] border-[1.5px] border-dashed border-white/60 rounded-[2rem] sm:rounded-[2.5rem] pointer-events-none z-0"></div>
 
             <div className="relative z-10 flex flex-col h-full w-full">
-              <header className="shrink-0 px-5 sm:px-7 pt-8 sm:pt-10 pb-4 relative">
+<header className="shrink-0 px-5 sm:px-7 pt-8 sm:pt-10 pb-4 relative">
                 <MyCustomStar className="absolute top-6 left-3" size={16} color="#FFB7D5" />
                 <div className="bg-white/80 rounded-[2rem] py-3.5 px-5 flex justify-between items-center shadow-sm border border-white/80 backdrop-blur-md relative overflow-hidden">
                   <div className="flex flex-col">
                     <div className="flex items-center gap-1.5">
-                      <h1 className="text-lg font-black tracking-tighter text-[#FFB7D5] uppercase">nhomtuay</h1>
+                      <h1 className="text-lg font-black tracking-widest text-[#FFB7D5] uppercase">nhomtuay</h1>
                       <div className="w-1.5 h-1.5 rounded-full bg-yellow-300 animate-pulse"></div>
                     </div>
                     <p className="text-[9px] font-bold text-[#D8BFD8] tracking-[0.2em] uppercase">ระบบติดตามสินค้า</p>
                   </div>
 
                   <div className="w-10 h-10 rounded-full bg-white border-2 border-pink-100 shadow-inner flex items-center justify-center overflow-hidden shrink-0">
-                    <div className="text-pink-200"><Sparkles size={16} fill="currentColor" /></div>
+                    <img 
+                      src="https://i.ibb.co/3mG26Y8h/649334019-3501023216721554-4674372379976090810-n.jpg" 
+                      alt="Profile" 
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                 </div>
               </header>
@@ -670,6 +699,7 @@
                 )}
               </main>
 
+              {/* เมนูด้านล่าง (Bottom Navigation) แบบฟิกซ์ */}
               <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center justify-center pointer-events-none w-full px-5 z-40">
                 <nav className="bg-white/95 backdrop-blur-2xl h-[3.2rem] rounded-full shadow-2xl shadow-pink-200/40 flex items-center justify-center gap-1.5 px-2 border border-pink-50 pointer-events-auto">
                   <button onClick={() => { setView('customer'); setCustomerSearch(''); }} className={`flex items-center justify-center w-9 h-9 rounded-full transition-all duration-300 ${view === 'customer' ? 'text-white bg-pink-400 shadow-md scale-110' : 'text-pink-300 hover:bg-pink-50'}`}><Home size={15} fill={view === 'customer' ? 'currentColor' : 'none'} /></button>
