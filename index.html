@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Nhomtuay Tracking System</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;700;900&display=swap');
+    
+    /* รีเซ็ตหน้าจอให้พอดีเป๊ะ */
+    html, body { 
+      font-family: 'Mitr', sans-serif; 
+      margin: 0; 
+      padding: 0;
+      height: 100%;
+      overflow: hidden; /* ล็อกไม่ให้หน้าเว็บหลักเลื่อน */
+    }
+    
+    .bg-striped { 
+      background-color: #ffffff; 
+      background-image: linear-gradient(-45deg, #fff9fb 25%, transparent 25%, transparent 50%, #fff9fb 50%, #fff9fb 75%, transparent 75%, transparent); 
+      background-size: 40px 40px; 
+      animation: stripeSlide 2s linear infinite; 
+    }
+    
+    @keyframes stripeSlide { 
+      0% { background-position: 0 0; } 
+      100% { background-position: 40px 40px; } 
+    }
+    
+    @keyframes twinkle { 
+      0%, 100% { opacity: 1; transform: scale(1); } 
+      50% { opacity: 0.2; transform: scale(0.8); } 
+    }
+    .animate-twinkle { animation: twinkle 4s ease-in-out infinite; }
+
+    .polka-dot-overlay { 
+      background-image: radial-gradient(rgba(255, 255, 255, 1) 2.5px, transparent 2.5px), radial-gradient(rgba(255, 255, 255, 1) 2.5px, transparent 2.5px); 
+      background-size: 32px 32px; 
+      background-position: 0 0, 16px 16px; 
+      opacity: 0.6; 
+    }
+    
+    .lace-mask {
+      -webkit-mask-box-image-source: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Crect x='10' y='10' width='40' height='40' fill='black'/%3E%3Ccircle cx='10' cy='10' r='10' fill='black'/%3E%3Ccircle cx='30' cy='10' r='10' fill='black'/%3E%3Ccircle cx='50' cy='10' r='10' fill='black'/%3E%3Ccircle cx='10' cy='30' r='10' fill='black'/%3E%3Ccircle cx='50' cy='30' r='10' fill='black'/%3E%3Ccircle cx='10' cy='50' r='10' fill='black'/%3E%3Ccircle cx='30' cy='50' r='10' fill='black'/%3E%3Ccircle cx='50' cy='50' r='10' fill='black'/%3E%3C/svg%3E");
+      -webkit-mask-box-image-slice: 20 fill;
+      -webkit-mask-box-image-width: 20px;
+      -webkit-mask-box-image-repeat: round;
+    }
+
+    .marquee-wrapper { width: 100%; overflow: hidden; white-space: nowrap; display: flex; align-items: center; }
+    .marquee-content { display: inline-block; padding-left: 100%; animation: marquee 18s linear infinite; will-change: transform; }
+    @keyframes marquee { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
+    
+    .admin-input { 
+      width: 100%; 
+      background-color: rgba(255, 255, 255, 0.7); 
+      border: 1px solid #fff5f9; 
+      border-radius: 1.5rem; 
+      padding: 0.8rem 1.2rem; 
+      font-size: 0.85rem; 
+      outline: none; 
+      color: #7A6B72; 
+      transition: all 0.3s; 
+    }
+    .admin-input:focus { border-color: #FFB7D5; background-color: white; }
+    .admin-input::placeholder { color: #FFD1DC; font-weight: 500; }
+    .custom-scrollbar::-webkit-scrollbar { width: 0px; }
+  </style>
+</head>
+<body>
+  <div id="root" class="h-full w-full"></div>
+
+  <script type="text/babel" data-type="module">
+    import React, { useState, useEffect } from 'https://esm.sh/react@18';
+    import { createRoot } from 'https://esm.sh/react-dom@18/client';
+    import { 
+      Search, PlusCircle, List, User, Home, ExternalLink, Sparkles, Calendar, Clock, 
+      ChevronRight, Megaphone, Star, ShoppingBag, PlaneLanding, Truck, Gift, 
+      ChevronDown, MousePointer2, Warehouse, PackageCheck, CheckCircle2, Settings, 
+      Lock, MessageSquare, LogOut, Info, Save, MapPin, Loader2 
+    } from 'https://esm.sh/lucide-react';
+
+    // ✨ นำ URL จาก Google Apps Script มาใส่ตรงนี้ ✨
+    const API_URL = "https://script.google.com/macros/s/AKfycbwTcMDA_4TEg9nFmnlSsfLZFVynk7gmOLQXK3HfxuGD9JQwgIapOEnwq9Lfj2iNfZdyDg/exec"; 
+
+    const MyCustomStar = ({ className, size = 24, color = "#FFB7D5", opacity = 1 }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill={color} style={{ opacity }} className={`animate-twinkle ${className}`} xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" />
+      </svg>
+    );
+
+    const App = () => {
+      const [isLoading, setIsLoading] = useState(true);
+      const [view, setView] = useState('customer'); 
+      const [isAdmin, setIsAdmin] = useState(false);
+      const [selectedOrder, setSelectedOrder] = useState(null); 
+      
+      const [announcement, setAnnouncement] = useState('กำลังโหลดข้อมูล... ✨');
+      const [searchInstruction, setSearchInstruction] = useState('กำลังโหลดข้อมูล... 🐾');
+      const [adminPassword, setAdminPassword] = useState('');
+      const [tempPassword, setTempPassword] = useState('');
+
+      const [orders, setOrders] = useState([]);
+      const [customerSearch, setCustomerSearch] = useState('');
+      const [adminSearch, setAdminSearch] = useState('');
+      const [foundOrders, setFoundOrders] = useState([]);
+      const [loginInput, setLoginInput] = useState('');
+      
+      const initialOrderState = {
+        id: '', accountName: '', recipientName: '', orderDetail: '', address: '',
+        status: 'รับออเดอร์', arrivalTH: '', deliveryTH: '', tracking: '', platform: 'FACEBOOK'
+      };
+      const [newOrder, setNewOrder] = useState(initialOrderState);
+
+      const statusSteps = [
+        { label: 'รับออเดอร์', icon: ShoppingBag, color: '#D8BFD8' }, 
+        { label: 'หิ้วแล้ว', icon: PackageCheck, color: '#FFB7D5' },   
+        { label: 'กดเว็บแล้ว', icon: MousePointer2, color: '#FDE047' },     
+        { label: 'คลังญี่ปุ่นรับสินค้า', icon: Warehouse, color: '#98FB98' },
+        { label: 'ของถึงโกดังไทย', icon: Home, color: '#BAE6FD' },
+        { label: 'ชิปปิ้งจัดส่ง', icon: PlaneLanding, color: '#DDD6FE' },
+        { label: 'ทางร้านจัดส่ง', icon: Truck, color: '#FBCFE8' }
+      ];
+
+      const getStatusColor = (status) => statusSteps.find(s => s.label === status)?.color || '#FFB7D5';
+
+      useEffect(() => {
+        fetch(API_URL)
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              setOrders(data.orders || []);
+              if (data.settings) {
+                setAnnouncement(data.settings.announcement || '');
+                setSearchInstruction(data.settings.searchInstruction || '');
+                setAdminPassword(data.settings.adminPassword || '1234');
+              }
+            }
+            setIsLoading(false);
+          })
+          .catch(err => {
+            console.error("Fetch error:", err);
+            setIsLoading(false);
+          });
+      }, []);
+
+      const sendPostRequest = async (action, data) => {
+        try {
+          await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action, data })
+          });
+        } catch (error) {
+          console.error("API Error:", error);
+        }
+      };
+
+      const handleSaveOrder = async (e) => {
+        e.preventDefault();
+        const action = view === 'admin-edit' ? 'editOrder' : 'addOrder';
+        const orderData = { ...newOrder };
+        
+        if (action === 'addOrder' && !orderData.dateAdded) {
+          orderData.dateAdded = new Date().toISOString().split('T')[0];
+        }
+
+        if (action === 'editOrder') {
+          setOrders(orders.map(o => o.id === orderData.id ? orderData : o));
+        } else {
+          setOrders([...orders, orderData]);
+        }
+
+        setNewOrder(initialOrderState);
+        setView('admin-list');
+        await sendPostRequest(action, orderData);
+      };
+
+      const handleQuickStatusUpdate = async (id, newStatus) => {
+        setOrders(orders.map(o => o.id === id ? { ...o, status: newStatus } : o));
+        await sendPostRequest('updateStatus', { id, status: newStatus });
+      };
+
+      const handleDeleteOrder = async (id) => {
+        if(window.confirm('คุณต้องการลบออเดอร์นี้ใช่หรือไม่?')) {
+          setOrders(orders.filter(o => o.id !== id));
+          setView('admin-list');
+          await sendPostRequest('deleteOrder', { id });
+        }
+      };
+
+      const handleUpdateSettings = async (type) => {
+        if (type === 'announcement') {
+          await sendPostRequest('updateSettings', { announcement });
+          alert('อัปเดตข้อความประกาศสำเร็จ ✨');
+        } else if (type === 'searchGuide') {
+          await sendPostRequest('updateSettings', { searchInstruction });
+          alert('อัปเดตคำแนะนำการค้นหาสำเร็จ ✨');
+        } else if (type === 'password') {
+          if (tempPassword.length < 4) {
+            alert('รหัสผ่านควรมีอย่างน้อย 4 ตัวอักษร');
+            return;
+          }
+          setAdminPassword(tempPassword);
+          await sendPostRequest('updateSettings', { adminPassword: tempPassword });
+          setTempPassword('');
+          alert('เปลี่ยนรหัสผ่านเรียบร้อยแล้ว');
+        }
+      };
+
+      const handleCustomerSearch = () => {
+        if (!customerSearch.trim()) return;
+        const results = orders.filter(order => 
+          order.accountName.toLowerCase().includes(customerSearch.toLowerCase())
+        );
+        setFoundOrders(results);
+      };
+
+      const handleAdminLogin = () => {
+        if (loginInput === adminPassword) {
+          setIsAdmin(true);
+          setView('admin-list');
+          setLoginInput('');
+        } else {
+          alert('รหัสผ่านไม่ถูกต้อง');
+        }
+      };
+
+      const handleOpenDetail = (order) => {
+        setSelectedOrder(order);
+        setView('admin-detail');
+      };
+
+      const OrderStepper = ({ currentStatus }) => {
+        const currentIndex = statusSteps.findIndex(s => s.label === currentStatus);
+        return (
+          <div className="flex flex-col gap-0 px-2 py-2">
+            {statusSteps.map((step, index) => {
+              const isReached = index <= currentIndex;
+              const isCurrent = index === currentIndex;
+              const Icon = step.icon;
+              return (
+                <div key={step.label} className="flex gap-4 relative">
+                  {index !== statusSteps.length - 1 && (
+                    <div className={`absolute left-[13.5px] top-[28px] w-[2px] h-[calc(100%-24px)] border-l-2 border-dashed ${isReached && index < currentIndex ? 'border-pink-300' : 'border-gray-100'}`}></div>
+                  )}
+                  <div className="flex flex-col items-center z-10">
+                    <div 
+                      className={`w-[28px] h-[28px] rounded-full flex items-center justify-center transition-all duration-500 border-2 ${
+                        isReached ? 'border-white shadow-sm' : 'bg-white border-gray-50 text-gray-200'
+                      } ${isCurrent ? 'scale-125 ring-4 ring-pink-100/50' : 'scale-100'}`}
+                      style={{ backgroundColor: isReached ? step.color : 'white' }}
+                    >
+                      {isReached && !isCurrent && index < currentIndex ? <CheckCircle2 size={14} className="text-white" /> : <Icon size={14} className={isReached ? 'text-white' : 'text-gray-200'} />}
+                      {isCurrent && (
+                        <div className="absolute -top-1 -right-1 bg-white p-0.5 rounded-full shadow-sm border border-pink-50">
+                          <div className="w-1.5 h-1.5 rounded-full bg-pink-400 animate-pulse"></div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className={`flex items-center pb-6 transition-all ${isCurrent ? 'translate-x-1' : ''}`}>
+                    <span className={`text-[11px] font-black tracking-tight ${isCurrent ? 'text-pink-500' : isReached ? 'text-[#7A6B72]' : 'text-gray-300'}`}>
+                      {step.label}
+                      {isCurrent && <span className="ml-2 inline-block animate-bounce">✨</span>}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        );
+      };
+
+      return (
+        <div className="h-full bg-striped font-sans text-[#7A6B72] flex items-center justify-center overflow-hidden p-0 sm:p-6">
+          <div className="w-full max-w-[420px] h-[100dvh] sm:h-[850px] drop-shadow-[0_15px_35px_rgba(255,183,213,0.35)] relative flex flex-col lace-mask bg-[#F291B5]">
+            
+            <div className="absolute inset-0 bg-white/10 backdrop-blur-[12px] pointer-events-none z-0"></div>
+            <div className="absolute inset-0 polka-dot-overlay pointer-events-none z-0"></div>
+            
+            <MyCustomStar className="absolute top-[10%] left-[8%] pointer-events-none z-0" size={24} color="#ffffff" opacity={0.5} />
+            <MyCustomStar className="absolute top-[18%] right-[15%] pointer-events-none z-0" size={16} color="#ffffff" opacity={0.4} />
+            <MyCustomStar className="absolute top-[35%] left-[25%] pointer-events-none z-0" size={20} color="#ffffff" opacity={0.3} />
+            <MyCustomStar className="absolute top-[45%] right-[5%] pointer-events-none z-0" size={28} color="#ffffff" opacity={0.4} />
+            <MyCustomStar className="absolute top-[60%] left-[12%] pointer-events-none z-0" size={18} color="#ffffff" opacity={0.3} />
+            <MyCustomStar className="absolute bottom-[25%] right-[20%] pointer-events-none z-0" size={22} color="#ffffff" opacity={0.5} />
+            <MyCustomStar className="absolute bottom-[15%] left-[30%] pointer-events-none z-0" size={16} color="#ffffff" opacity={0.4} />
+            <MyCustomStar className="absolute bottom-[5%] right-[10%] pointer-events-none z-0" size={24} color="#ffffff" opacity={0.3} />
+
+            <div className="absolute inset-[16px] sm:inset-[24px] border-[1.5px] border-dashed border-white/60 rounded-[2rem] sm:rounded-[2.5rem] pointer-events-none z-0"></div>
+
+            <div className="relative z-10 flex flex-col h-full w-full">
+              <header className="shrink-0 px-5 sm:px-7 pt-8 sm:pt-10 pb-4 relative">
+                <MyCustomStar className="absolute top-6 left-3" size={16} color="#FFB7D5" />
+                <div className="bg-white/80 rounded-[2rem] py-3.5 px-5 flex justify-between items-center shadow-sm border border-white/80 backdrop-blur-md relative overflow-hidden">
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-1.5">
+                      <h1 className="text-lg font-black tracking-tighter text-[#FFB7D5] uppercase">nhomtuay</h1>
+                      <div className="w-1.5 h-1.5 rounded-full bg-yellow-300 animate-pulse"></div>
+                    </div>
+                    <p className="text-[9px] font-bold text-[#D8BFD8] tracking-[0.2em] uppercase">ระบบติดตามสินค้า</p>
+                  </div>
+
+                  <div className="w-10 h-10 rounded-full bg-white border-2 border-pink-100 shadow-inner flex items-center justify-center overflow-hidden shrink-0">
+                    <div className="text-pink-200"><Sparkles size={16} fill="currentColor" /></div>
+                  </div>
+                </div>
+              </header>
+
+              <div className="shrink-0 h-[40px] bg-white rounded-2xl flex items-center px-2 overflow-hidden mb-4 shadow-sm mx-5 sm:mx-7 border border-white/80">
+                <div className="flex items-center gap-1.5 bg-[#FFB7D5] text-white px-2.5 py-1 rounded-xl shrink-0 border border-white/50 shadow-sm z-20">
+                  <Megaphone size={10} fill="white" />
+                  <span className="text-[9px] font-black uppercase tracking-widest">News</span>
+                </div>
+                <div className="marquee-wrapper flex-1 ml-2">
+                   <div className="marquee-content text-[#A78BFA] text-[11px] font-bold">
+                      {announcement}
+                   </div>
+                </div>
+              </div>
+
+              <main className="flex-1 overflow-y-auto px-5 sm:px-7 pb-28 custom-scrollbar relative z-20">
+                {isLoading ? (
+                  <div className="flex flex-col items-center justify-center h-full gap-3 opacity-70">
+                    <Loader2 size={32} className="text-pink-200 animate-spin" />
+                    <p className="text-[10px] font-black text-white uppercase tracking-widest">Loading data...</p>
+                  </div>
+                ) : (
+                  <>
+                    {view === 'customer' && (
+                      <div className="space-y-5 animate-in fade-in duration-500">
+                        <div className="bg-white/90 rounded-[2rem] p-2 border border-white shadow-sm transition-all focus-within:ring-2 focus-within:ring-pink-200/50 backdrop-blur-md">
+                           <div className="flex items-center gap-3 px-3">
+                              <input 
+                                type="text"
+                                placeholder="พิมพ์ชื่อแอคเคาท์ของคุณ..."
+                                className="flex-1 bg-transparent outline-none text-[13px] placeholder-pink-200 font-medium py-1.5 w-full"
+                                value={customerSearch}
+                                onChange={(e) => setCustomerSearch(e.target.value)}
+                                onKeyPress={(e) => e.key === 'Enter' && handleCustomerSearch()}
+                              />
+                              <button 
+                                onClick={handleCustomerSearch}
+                                className="bg-pink-400 text-white p-2 rounded-[1rem] active:scale-95 transition-all shadow-md shadow-pink-200 shrink-0"
+                              >
+                                <Search size={14} />
+                              </button>
+                           </div>
+                        </div>
+
+                        {!customerSearch && foundOrders.length === 0 && (
+                          <div className="text-center animate-in zoom-in-95 duration-500">
+                             <div className="inline-block bg-white/70 backdrop-blur-md border border-white px-4 py-3 rounded-2xl shadow-sm text-left relative overflow-hidden w-full">
+                               <div className="absolute -top-3 -right-2 opacity-20 text-pink-300 rotate-12"><MyCustomStar size={40} color="currentColor" /></div>
+                               <p className="text-[11px] text-[#7A6B72] font-medium leading-relaxed relative z-10 whitespace-pre-line">
+                                  <span className="font-black text-pink-400 text-[12px]">💡 วิธีการค้นหา:</span><br/>
+                                  {searchInstruction}
+                               </p>
+                             </div>
+                          </div>
+                        )}
+
+                        {customerSearch && (
+                          <div className="space-y-5">
+                            <div className="flex items-center justify-between px-4 text-[#A78BFA] drop-shadow-sm font-black bg-white/40 rounded-full py-1.5 border border-white/50 backdrop-blur-sm">
+                              <h3 className="text-[9px] uppercase tracking-widest flex items-center gap-2">
+                                <Star size={12} fill="currentColor" className="text-yellow-400" /> My Orders
+                              </h3>
+                              {foundOrders.length > 0 && <span className="text-[9px] bg-white px-2 py-0.5 rounded-full shadow-sm text-pink-400">Results: {foundOrders.length}</span>}
+                            </div>
+
+                            {foundOrders.length > 0 ? (
+                              foundOrders.map((order, idx) => (
+                                <div key={idx} className="bg-white/95 rounded-[2rem] p-5 border border-white shadow-lg shadow-pink-100/50 flex flex-col gap-4 relative overflow-hidden animate-in slide-in-from-bottom-4 duration-500 backdrop-blur-md">
+                                  <div className="absolute top-0 right-6 bg-gradient-to-r from-pink-50 to-purple-50 text-pink-400 text-[8px] font-black px-3 py-1 rounded-b-lg border-x border-b border-white shadow-sm">
+                                    ORDER #{order.id}
+                                  </div>
+                                  <div className="flex gap-4 mt-2">
+                                    <div className="flex-1">
+                                      <div className="flex justify-between items-start mb-2">
+                                        <div>
+                                            <h4 className="font-black text-[#7A6B72] text-[15px] mb-1">{order.accountName}</h4>
+                                            <span className="text-[8px] bg-purple-50 text-purple-400 px-2.5 py-0.5 rounded-md font-black border border-white uppercase tracking-wider shadow-sm">{order.platform}</span>
+                                        </div>
+                                        <div className={`text-[8px] px-2.5 py-1 rounded-full border border-white shadow-sm flex items-center gap-1 font-bold shrink-0 ${order.status === 'ทางร้านจัดส่ง' ? 'bg-pink-50 text-pink-400' : 'bg-blue-50 text-blue-400'}`}>
+                                          <Clock size={8} strokeWidth={3} /> {order.status}
+                                        </div>
+                                      </div>
+                                      <div className="bg-gray-50/70 p-3 rounded-xl border border-dashed border-pink-100 shadow-inner space-y-1.5">
+                                        <p className="text-[10px] text-[#7A6B72] font-bold leading-tight">ผู้รับ: {order.recipientName || '-'}</p>
+                                        <p className="text-[10px] text-[#7A6B72] font-medium leading-relaxed">{order.orderDetail}</p>
+                                        <div className="pt-1.5 border-t border-pink-50 flex gap-2">
+                                            <MapPin size={10} className="text-pink-300 shrink-0" />
+                                            <p className="text-[9px] text-[#7A6B72] italic leading-tight">{order.address || 'ไม่ระบุที่อยู่'}</p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="bg-white/70 rounded-2xl p-2.5 pb-6 border border-white shadow-sm overflow-hidden relative">
+                                     <MyCustomStar className="absolute top-2 right-4 opacity-30" size={14} color="#FFB7D5" />
+                                     <div className="text-[9px] font-black text-pink-300 uppercase tracking-[0.2em] mb-3 flex items-center gap-1.5"><Sparkles size={10} className="text-yellow-400" /> Tracking Progress</div>
+                                     <OrderStepper currentStatus={order.status} />
+                                  </div>
+                                  <div className="flex flex-col gap-2 px-1 pt-2 border-t border-dashed border-gray-100">
+                                    <div className="flex justify-between items-center">
+                                        <div className="flex items-center gap-1.5">
+                                            <Calendar size={11} className="text-pink-300" />
+                                            <p className="text-[9px] font-black text-[#7A6B72]">ถึงไทย: {order.arrivalTH || '-'}</p>
+                                        </div>
+                                        <div className="flex items-center gap-1.5">
+                                            <Truck size={11} className="text-pink-300" />
+                                            <p className="text-[9px] font-black text-[#7A6B72]">ส่งไทย: {order.deliveryTH || '-'}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-between items-center bg-purple-50/50 p-2 rounded-lg border border-white shadow-sm">
+                                       <div className="flex items-center gap-2">
+                                         <PackageCheck size={12} className="text-purple-400" />
+                                         <div>
+                                           <p className="text-[8px] text-purple-300 font-bold uppercase leading-none mb-0.5">Track No.</p>
+                                           {order.tracking ? (
+                                             <a 
+                                               href={`https://track.thailandpost.co.th/?trackNumber=${order.tracking}`} 
+                                               target="_blank" 
+                                               rel="noopener noreferrer"
+                                               className="text-[11px] font-black text-purple-500 leading-none hover:underline"
+                                             >
+                                               {order.tracking}
+                                             </a>
+                                           ) : (
+                                             <p className="text-[11px] font-black text-purple-500 leading-none">Wait</p>
+                                           )}
+                                         </div>
+                                       </div>
+                                       <button 
+                                         onClick={() => order.tracking && window.open(`https://track.thailandpost.co.th/?trackNumber=${order.tracking}`, '_blank')}
+                                         className={`p-1.5 rounded-md border shadow-sm transition-transform ${order.tracking ? 'bg-white text-purple-500 border-purple-100 active:scale-95' : 'bg-gray-50 text-gray-300 border-gray-100'}`}
+                                       >
+                                         <ExternalLink size={10} />
+                                       </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="text-center py-16 bg-white/70 rounded-[2.5rem] backdrop-blur-md border border-white shadow-sm animate-in zoom-in-95 duration-300">
+                                 <div className="w-12 h-12 bg-pink-100 text-pink-300 rounded-full flex items-center justify-center mx-auto mb-3 shadow-inner border border-white"><Search size={20} /></div>
+                                 <p className="text-[11px] font-black text-pink-400 italic mb-1">ไม่พบข้อมูลออเดอร์นะคะ 😿</p>
+                                 <p className="text-[8px] font-bold text-pink-300 uppercase tracking-widest">Please try again</p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {view === 'login' && (
+                      <div className="bg-white/95 p-7 rounded-[2.5rem] border border-white text-center shadow-lg shadow-pink-100 mt-8 animate-in fade-in zoom-in-95 duration-500 relative mx-2">
+                        <MyCustomStar className="absolute -top-4 left-1/2 -translate-x-1/2 rotate-12" size={26} color="#FFB7D5" />
+                        <div className="w-14 h-14 bg-pink-100 text-pink-400 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner border border-white"><User size={28} /></div>
+                        <h2 className="text-base font-black text-pink-400 mb-6 uppercase tracking-[0.2em]">Admin Login</h2>
+                        <input type="password" placeholder="Password" className="admin-input w-full text-center py-3 mb-5 shadow-inner font-bold text-sm" value={loginInput} onChange={(e) => setLoginInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleAdminLogin()} />
+                        <button onClick={handleAdminLogin} className="w-full bg-pink-400 text-white font-black py-3.5 rounded-2xl active:scale-95 transition-all shadow-md shadow-pink-200 tracking-widest text-[13px]">LOGIN</button>
+                      </div>
+                    )}
+
+                    {(view === 'admin-add' || view === 'admin-edit') && (
+                      <div className="bg-white/95 p-6 rounded-[2rem] border border-white shadow-lg shadow-pink-100 space-y-5 animate-in fade-in duration-300 relative mx-1">
+                        <MyCustomStar className="absolute top-5 right-5 opacity-20" size={20} color="#FFB7D5" />
+                        <div className="flex items-center justify-between">
+                          <h2 className="text-base font-black text-pink-400 flex items-center gap-2"><PlusCircle size={18} className="text-pink-300" /> {view === 'admin-edit' ? 'แก้ไขรายการ' : 'เพิ่มรายการ'}</h2>
+                          {view === 'admin-edit' && <button type="button" onClick={() => setView('admin-detail')} className="text-[9px] bg-gray-100 px-2.5 py-1 rounded-full font-bold text-gray-500 hover:bg-gray-200 uppercase">Cancel</button>}
+                        </div>
+                        
+                        <form onSubmit={handleSaveOrder} className="space-y-3">
+                          <div>
+                            <label className="text-[9px] font-black text-pink-300 ml-2 uppercase mb-1 block">เลขออเดอร์</label>
+                            <input required className="admin-input py-2 px-3 text-[12px]" placeholder="เช่น Q75" value={newOrder.id} onChange={e => setNewOrder({...newOrder, id: e.target.value})} disabled={view === 'admin-edit'} />
+                          </div>
+                          <div>
+                            <label className="text-[9px] font-black text-pink-300 ml-2 uppercase mb-1 block">ชื่อแอคเคาท์</label>
+                            <input required className="admin-input py-2 px-3 text-[12px]" placeholder="เช่น คุณ Alice" value={newOrder.accountName} onChange={e => setNewOrder({...newOrder, accountName: e.target.value})} />
+                          </div>
+                          <div>
+                            <label className="text-[9px] font-black text-pink-300 ml-2 uppercase mb-1 block">รายละเอียดออเดอร์</label>
+                            <textarea required className="admin-input h-16 py-2 px-3 text-[12px]" placeholder="ระบุรายการสินค้า..." value={newOrder.orderDetail} onChange={e => setNewOrder({...newOrder, orderDetail: e.target.value})} />
+                          </div>
+                          <div>
+                            <label className="text-[9px] font-black text-pink-300 ml-2 uppercase mb-1 block">ชื่อผู้รับ</label>
+                            <input required className="admin-input py-2 px-3 text-[12px]" placeholder="ระบุชื่อจริงผู้รับสินค้า..." value={newOrder.recipientName} onChange={e => setNewOrder({...newOrder, recipientName: e.target.value})} />
+                          </div>
+                          <div>
+                            <label className="text-[9px] font-black text-pink-300 ml-2 uppercase mb-1 block">ที่อยู่จัดส่ง</label>
+                            <textarea className="admin-input h-16 py-2 px-3 text-[12px]" placeholder="ระบุที่อยู่..." value={newOrder.address} onChange={e => setNewOrder({...newOrder, address: e.target.value})} />
+                          </div>
+                          <div>
+                            <label className="text-[9px] font-black text-pink-300 ml-2 uppercase mb-1 block">สถานะ</label>
+                            <div className="relative">
+                              <select className="admin-input py-2 px-3 text-[12px] cursor-pointer appearance-none" value={newOrder.status} onChange={e => setNewOrder({...newOrder, status: e.target.value})}>
+                                {statusSteps.map(s => <option key={s.label} value={s.label}>{s.label}</option>)}
+                              </select>
+                              <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-pink-300 pointer-events-none" />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-[9px] font-black text-pink-300 ml-2 uppercase mb-1 block">รอบถึงไทย</label>
+                              <input className="admin-input py-2 px-3 text-[12px]" placeholder="15/03/69" value={newOrder.arrivalTH} onChange={e => setNewOrder({...newOrder, arrivalTH: e.target.value})} />
+                            </div>
+                            <div>
+                              <label className="text-[9px] font-black text-pink-300 ml-2 uppercase mb-1 block">ส่งไทย</label>
+                              <input className="admin-input py-2 px-3 text-[12px]" placeholder="20/03/69" value={newOrder.deliveryTH} onChange={e => setNewOrder({...newOrder, deliveryTH: e.target.value})} />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-[9px] font-black text-pink-300 ml-2 uppercase mb-1 block">Tracking number</label>
+                            <input className="admin-input py-2 px-3 text-[12px]" placeholder="เช่น TH123456" value={newOrder.tracking} onChange={e => setNewOrder({...newOrder, tracking: e.target.value})} />
+                          </div>
+                          <button type="submit" className="w-full bg-pink-400 text-white font-black py-3 rounded-2xl mt-3 shadow-md shadow-pink-200 active:scale-95 transition-all tracking-widest uppercase text-[12px]">{view === 'admin-edit' ? 'Update' : 'Save'}</button>
+                        </form>
+                      </div>
+                    )}
+
+                    {view === 'admin-list' && (
+                      <div className="space-y-3 animate-in fade-in duration-300">
+                         <div className="bg-white/90 p-2.5 rounded-[1.5rem] border border-white flex items-center gap-2 px-4 shadow-sm backdrop-blur-md relative mx-1">
+                           <MyCustomStar className="absolute -top-2 -right-2" size={14} color="#FFB7D5" />
+                           <Search size={14} className="text-pink-300" />
+                           <input className="flex-1 outline-none text-[12px] placeholder-pink-200 font-bold bg-transparent w-full" placeholder="Search orders..." value={adminSearch} onChange={(e) => setAdminSearch(e.target.value)} />
+                         </div>
+                         <div className="space-y-2 pb-2 mx-1">
+                           {orders.filter(o => o.accountName.toLowerCase().includes(adminSearch.toLowerCase())).map((order, idx) => (
+                              <div key={idx} onClick={() => handleOpenDetail(order)} className="bg-white/95 p-3 rounded-[1.2rem] border border-white flex items-center justify-between shadow-sm active:scale-[0.98] transition-transform cursor-pointer overflow-hidden group relative">
+                                 <div className="flex items-center gap-2.5 flex-1 overflow-hidden">
+                                   <div className="w-1.5 h-8 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: getStatusColor(order.status) }}></div>
+                                   <div className="flex flex-col gap-0 overflow-hidden w-full">
+                                      <p className="text-[9px] font-black text-pink-500 uppercase tracking-tighter leading-tight">#{order.id}</p>
+                                      <p className="font-bold text-[12px] text-[#7A6B72] truncate leading-tight w-full pr-2">{order.accountName}</p>
+                                   </div>
+                                 </div>
+                                 <div className="flex items-center gap-1.5 shrink-0">
+                                   <div className="relative" onClick={(e) => e.stopPropagation()}>
+                                     <select className="bg-gray-50/80 text-pink-500 font-black text-[8px] py-1 pl-1.5 pr-4 rounded-md border border-pink-100/50 outline-none appearance-none cursor-pointer max-w-[80px] truncate" value={order.status} onChange={(e) => handleQuickStatusUpdate(order.id, e.target.value)}>
+                                       {statusSteps.map(s => <option key={s.label} value={s.label}>{s.label}</option>)}
+                                     </select>
+                                     <ChevronDown size={8} className="absolute right-1 top-1/2 -translate-y-1/2 text-pink-400 pointer-events-none" />
+                                   </div>
+                                   <ChevronRight size={14} className="text-gray-200" />
+                                 </div>
+                              </div>
+                           ))}
+                         </div>
+                      </div>
+                    )}
+
+                    {view === 'admin-detail' && selectedOrder && (
+                      <div className="bg-white/95 p-5 rounded-[2rem] border border-white shadow-lg space-y-4 relative z-10 animate-in fade-in zoom-in-95 duration-300 mx-1">
+                         <MyCustomStar className="absolute top-3 right-6 rotate-12 opacity-40" size={20} color="#FFB7D5" />
+                         <button onClick={() => setView('admin-list')} className="text-pink-400 flex items-center gap-0.5 text-[10px] font-black mb-1 bg-pink-50 px-2.5 py-1 rounded-full border border-pink-100 w-fit uppercase tracking-wider"><ChevronRight className="rotate-180" size={12} /> Back</button>
+                         <div className="bg-white rounded-[1.5rem] p-4 border border-pink-50 shadow-inner space-y-3">
+                            <div className="flex justify-between items-center border-b border-dashed border-gray-100 pb-2.5">
+                               <div>
+                                 <p className="text-[8px] text-pink-300 font-bold uppercase tracking-widest">Order ID</p>
+                                 <p className="font-black text-base text-pink-500">#{selectedOrder.id}</p>
+                               </div>
+                               <div className="text-right">
+                                 <p className="text-[8px] text-pink-300 font-bold uppercase tracking-widest">Status</p>
+                                 <p className="font-black text-[9px] bg-blue-50 text-blue-500 px-2 py-0.5 rounded-md">{selectedOrder.status}</p>
+                               </div>
+                            </div>
+                            <div>
+                               <p className="text-[8px] text-pink-300 font-bold uppercase tracking-widest mb-0.5">Account / Recipient</p>
+                               <p className="font-bold text-[#7A6B72] text-[13px] flex flex-col gap-0.5">
+                                 <span>{selectedOrder.accountName}</span>
+                                 <span className="text-pink-400 text-[10px] font-black">Recipient: {selectedOrder.recipientName || '-'}</span>
+                               </p>
+                            </div>
+                            <div>
+                               <p className="text-[8px] text-pink-300 font-bold uppercase tracking-widest mb-0.5">Details</p>
+                               <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100 text-[10px] font-medium text-[#7A6B72] leading-relaxed">{selectedOrder.orderDetail}</div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3 border-t border-dashed border-gray-100 pt-2.5">
+                               <div>
+                                 <p className="text-[8px] text-pink-300 font-bold uppercase tracking-widest mb-0.5">Arrival TH</p>
+                                 <p className="font-black text-[#7A6B72] text-[11px]">{selectedOrder.arrivalTH || '-'}</p>
+                               </div>
+                               <div>
+                                 <p className="text-[8px] text-pink-300 font-bold uppercase tracking-widest mb-0.5">Delivery TH</p>
+                                 <p className="font-black text-[#7A6B72] text-[11px]">{selectedOrder.deliveryTH || '-'}</p>
+                               </div>
+                            </div>
+                            <div className="pt-2 border-t border-dashed border-gray-100">
+                              <p className="text-[8px] text-pink-300 font-bold uppercase tracking-widest mb-0.5">Tracking No.</p>
+                              {selectedOrder.tracking ? (
+                                <a href={`https://track.thailandpost.co.th/?trackNumber=${selectedOrder.tracking}`} target="_blank" rel="noopener noreferrer" className="font-black text-purple-500 text-[11px] bg-purple-50 px-2.5 py-0.5 rounded inline-block shadow-sm hover:underline">
+                                  {selectedOrder.tracking}
+                                </a>
+                              ) : (
+                                <p className="font-black text-purple-500 text-[11px] bg-purple-50 px-2.5 py-0.5 rounded inline-block shadow-sm">-</p>
+                              )}
+                            </div>
+                         </div>
+                         <div className="grid grid-cols-2 gap-2 mt-4">
+                            <button onClick={() => { setNewOrder(selectedOrder); setView('admin-edit'); }} className="bg-yellow-400 text-white py-2.5 rounded-xl font-black shadow-md shadow-yellow-200/50 active:scale-95 transition-all text-[11px] uppercase">Edit</button>
+                            <button onClick={() => handleDeleteOrder(selectedOrder.id)} className="bg-red-400 text-white py-2.5 rounded-xl font-black shadow-md shadow-red-200/50 active:scale-95 transition-all text-[11px] uppercase">Delete</button>
+                         </div>
+                      </div>
+                    )}
+
+                    {view === 'admin-settings' && (
+                       <div className="bg-white/95 p-6 rounded-[2rem] border border-white shadow-lg space-y-6 animate-in fade-in zoom-in-95 duration-500 relative mx-1">
+                          <MyCustomStar className="absolute -top-3 -left-1 rotate-45" size={24} color="#FFB7D5" />
+                          
+                          <div className="flex items-center justify-between border-b border-dashed border-pink-100 pb-3">
+                            <h2 className="text-base font-black text-pink-400 flex items-center gap-2">
+                              <Settings size={18} className="text-pink-300" /> Settings
+                            </h2>
+                          </div>
+
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between px-1">
+                              <label className="text-[9px] font-black text-pink-300 uppercase flex items-center gap-1">
+                                <Megaphone size={10} /> Announcement
+                              </label>
+                              <button onClick={() => handleUpdateSettings('announcement')} className="bg-pink-100 text-pink-500 px-2 py-0.5 rounded-full text-[8px] font-black flex items-center gap-1 hover:bg-pink-200 active:scale-95 transition-all">
+                                <Save size={8} /> UPDATE
+                              </button>
+                            </div>
+                            <textarea className="admin-input h-16 text-[11px] bg-gray-50/50 border-none px-3 py-2" value={announcement} onChange={(e) => setAnnouncement(e.target.value)} />
+                          </div>
+
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between px-1">
+                              <label className="text-[9px] font-black text-pink-300 uppercase flex items-center gap-1">
+                                <Info size={10} /> Search Guide
+                              </label>
+                              <button onClick={() => handleUpdateSettings('searchGuide')} className="bg-pink-100 text-pink-500 px-2 py-0.5 rounded-full text-[8px] font-black flex items-center gap-1 hover:bg-pink-200 active:scale-95 transition-all">
+                                <Save size={8} /> UPDATE
+                              </button>
+                            </div>
+                            <textarea className="admin-input h-20 text-[11px] bg-gray-50/50 border-none px-3 py-2" value={searchInstruction} onChange={(e) => setSearchInstruction(e.target.value)} />
+                          </div>
+
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between px-1">
+                              <label className="text-[9px] font-black text-pink-300 uppercase flex items-center gap-1">
+                                <Lock size={10} /> Password
+                              </label>
+                              <button onClick={() => handleUpdateSettings('password')} className="bg-purple-100 text-purple-500 px-2.5 py-0.5 rounded-full text-[8px] font-black flex items-center gap-1 hover:bg-purple-200 active:scale-95 transition-all">
+                                <Save size={8} /> UPDATE
+                              </button>
+                            </div>
+                            <input type="text" className="admin-input w-full text-center font-bold bg-gray-50/50 border-none px-3 py-2 text-[12px]" placeholder="New Password" value={tempPassword} onChange={(e) => setTempPassword(e.target.value)} />
+                          </div>
+
+                          <div className="pt-2 border-t border-dashed border-gray-100">
+                            <button onClick={() => { setIsAdmin(false); setView('customer'); }} className="w-full bg-red-50 text-red-400 py-2.5 rounded-xl font-black flex items-center justify-center gap-1.5 active:scale-95 transition-all text-[11px] border border-red-100 uppercase">
+                              <LogOut size={12} /> Admin Logout
+                            </button>
+                          </div>
+                       </div>
+                    )}
+                  </>
+                )}
+              </main>
+
+              <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center justify-center pointer-events-none w-full px-5 z-40">
+                <nav className="bg-white/95 backdrop-blur-2xl h-[3.2rem] rounded-full shadow-2xl shadow-pink-200/40 flex items-center justify-center gap-1.5 px-2 border border-pink-50 pointer-events-auto">
+                  <button onClick={() => { setView('customer'); setCustomerSearch(''); }} className={`flex items-center justify-center w-9 h-9 rounded-full transition-all duration-300 ${view === 'customer' ? 'text-white bg-pink-400 shadow-md scale-110' : 'text-pink-300 hover:bg-pink-50'}`}><Home size={15} fill={view === 'customer' ? 'currentColor' : 'none'} /></button>
+                  <div className="w-[1px] h-4 bg-pink-100/50 mx-0.5"></div>
+                  {isAdmin ? (
+                    <div className="flex items-center gap-1.5">
+                      <button onClick={() => setView('admin-list')} className={`flex items-center justify-center w-9 h-9 rounded-full transition-all duration-300 ${view === 'admin-list' || view === 'admin-detail' ? 'text-white bg-purple-400 shadow-md scale-110' : 'text-purple-300 hover:bg-purple-50'}`}><List size={15} fill={view === 'admin-list' || view === 'admin-detail' ? 'currentColor' : 'none'} /></button>
+                      <button onClick={() => { setNewOrder(initialOrderState); setView('admin-add'); }} className={`flex items-center justify-center w-9 h-9 rounded-full transition-all duration-300 ${view === 'admin-add' || view === 'admin-edit' ? 'text-white bg-green-400 shadow-md scale-110' : 'text-gray-400 hover:bg-green-50'}`}><PlusCircle size={15} fill={view === 'admin-add' || view === 'admin-edit' ? 'currentColor' : 'none'} /></button>
+                      <button onClick={() => setView('admin-settings')} className={`flex items-center justify-center w-9 h-9 rounded-full transition-all duration-300 ${view === 'admin-settings' ? 'text-white bg-blue-400 shadow-md scale-110' : 'text-blue-300 hover:bg-blue-50'}`}><Settings size={15} /></button>
+                    </div>
+                  ) : (
+                    <button onClick={() => setView('login')} className={`flex items-center justify-center w-9 h-9 rounded-full transition-all duration-300 ${view === 'login' ? 'text-white bg-pink-400 shadow-md scale-110' : 'text-pink-300 hover:bg-pink-50'}`}><User size={15} fill={view === 'login' ? 'currentColor' : 'none'} /></button>
+                  )}
+                </nav>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const root = createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
