@@ -93,7 +93,6 @@
       Lock, MessageSquare, LogOut, Info, Save, MapPin, Loader2, Camera
     } from 'https://esm.sh/lucide-react?deps=react@18,react-dom@18';
 
-    // ✨ อย่าลืมนำ URL จาก Google Apps Script มาใส่ตรงนี้ ✨
     const API_URL = "https://script.google.com/macros/s/AKfycbxMgBhl8eZAtSjU3TMeRf35nqMnyQUTEBlsD4QEpJ97kESY3OVTTV16wmfzO9iHSW7Jqw/exec"; 
 
     const MyCustomStar = ({ className, size = 24, color = "#FFB7D5", opacity = 1 }) => (
@@ -268,18 +267,20 @@
                   <div className="flex flex-col">
                     <div className="flex items-center gap-1">
                       <h1 className="text-lg font-black tracking-widest text-[#FFB7D5] uppercase">nhomtuay</h1>
-                      <img src="https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3aXgxdncxOGR6bzhrbGRrbmVlbWVtemZtNTN3MXg3MndpbnpjYWM0ZiZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/3LWy5senb4QFCIqgYd/giphy.gif" alt="Sparkles" className="w-10 h-10 object-contain -ml-1.5 -mt-1" />
+                      {/* ขยาย GIF ดาวให้ใหญ่จุใจตามสั่ง */}
+                      <img src="https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3aXgxdncxOGR6bzhrbGRrbmVlbWVtemZtNTN3MXg3MndpbnpjYWM0ZiZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/3LWy5senb4QFCIqgYd/giphy.gif" alt="Sparkles" className="w-12 h-12 object-contain -ml-2 -mt-1" />
                     </div>
-                    <p className="text-[9px] font-bold text-[#D8BFD8] tracking-[0.2em] uppercase mt-[-6px]">ระบบติดตามสินค้า</p>
+                    <p className="text-[9px] font-bold text-[#D8BFD8] tracking-[0.2em] uppercase mt-[-10px]">ระบบติดตามสินค้า</p>
                   </div>
                   <div className="w-10 h-10 rounded-full bg-white border-2 border-pink-100 shadow-inner flex items-center justify-center overflow-hidden shrink-0">
+                    {/* ใส่ลิงก์รูปโปรไฟล์ของคุณได้เลย */}
                     <img src="https://i.ibb.co/3mG26Y8h/649334019-3501023216721554-4674372379976090810-n.jpg" alt="Profile" className="w-full h-full object-cover" />
                   </div>
                 </div>
               </header>
 
-              <div className="relative mx-5 sm:mx-7 mb-4 z-20">
-                <img src="https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3bm1nNGd2ODNzN2J5aGZkaDh6MGMyc2p1c3dpNWJ0N3J2YzczcGFocSZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/rI2Stk88cPAhkFrN4q/giphy.gif" alt="Peeking" className="absolute -left-2 -top-[22px] w-[50px] h-[50px] object-contain z-30 pointer-events-none drop-shadow-sm" />
+              {/* แถบ News คลีน ๆ ไม่มี GIF แล้วค่ะ */}
+              <div className="mx-5 sm:mx-7 mb-4 z-20">
                 <div className="shrink-0 h-[40px] bg-white rounded-2xl flex items-center px-2 overflow-hidden shadow-sm border border-white/80 w-full">
                   <div className="flex items-center gap-1.5 bg-[#FFB7D5] text-white px-2.5 py-1 rounded-xl shrink-0 border border-white/50 shadow-sm z-20 relative">
                     <Megaphone size={10} fill="white" />
@@ -434,7 +435,9 @@
               </main>
 
               <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center justify-center w-full px-5 z-40 pointer-events-none">
-                <img src="https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3bm1nNGd2ODNzN2J5aGZkaDh6MGMyc2p1c3dpNWJ0N3J2YzczcGFocSZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/rI2Stk88cPAhkFrN4q/giphy.gif" alt="Mascot" className="absolute bottom-[3.5rem] right-4 w-14 h-14 object-contain" />
+                {/* น้องแมว Mascot ย้ายมาอยู่ขวาล่างตรงนี้อย่างปลอดภัย */}
+                <img src="https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3bm1nNGd2ODNzN2J5aGZkaDh6MGMyc2p1c3dpNWJ0N3J2YzczcGFocSZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/rI2Stk88cPAhkFrN4q/giphy.gif" alt="Mascot" className="absolute bottom-[3.5rem] right-4 w-14 h-14 object-contain drop-shadow-sm" />
+                
                 <nav className="bg-white/95 backdrop-blur-2xl h-[3.2rem] rounded-full shadow-2xl flex items-center justify-center gap-1.5 px-2 border border-pink-50 pointer-events-auto">
                   <button onClick={() => { setView('customer'); setCustomerSearch(''); setHasSearched(false); setFoundOrders([]); }} className={`flex items-center justify-center w-9 h-9 rounded-full transition-all ${view === 'customer' ? 'text-white bg-pink-400 shadow-md scale-110' : 'text-pink-300 hover:bg-pink-50'}`}><Home size={15} fill={view === 'customer' ? 'currentColor' : 'none'} /></button>
                   <div className="w-[1px] h-4 bg-pink-100/50 mx-0.5"></div>
