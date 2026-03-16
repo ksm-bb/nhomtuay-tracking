@@ -93,7 +93,8 @@
       Lock, MessageSquare, LogOut, Info, Save, MapPin, Loader2, Camera
     } from 'https://esm.sh/lucide-react?deps=react@18,react-dom@18';
 
-    const API_URL = "https://script.google.com/macros/s/AKfycbxMgBhl8eZAtSjU3TMeRf35nqMnyQUTEBlsD4QEpJ97kESY3OVTTV16wmfzO9iHSW7Jqw/exec"; 
+    // ✨ URL ของ Web App ใหม่
+    const API_URL = "https://script.google.com/macros/s/AKfycbw0bLaFZsXWgahIYCuTjwtLCvQ9iA0hdUwzEJQg7Mze6-pgJty_X9phJPvhkbbg2Phz8w/exec"; 
 
     const MyCustomStar = ({ className, size = 24, color = "#FFB7D5", opacity = 1 }) => (
       <svg width={size} height={size} viewBox="0 0 24 24" fill={color} style={{ opacity }} className={`animate-twinkle ${className}`} xmlns="http://www.w3.org/2000/svg">
@@ -170,13 +171,21 @@
         e.preventDefault();
         const action = view === 'admin-edit' ? 'editOrder' : 'addOrder';
         const orderData = { ...newOrder };
-        if (action === 'addOrder' && !orderData.dateAdded) orderData.dateAdded = new Date().toISOString().split('T')[0];
+        
+        if (action === 'addOrder' && !orderData.dateAdded) {
+          const d = new Date();
+          const localDate = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0');
+          orderData.dateAdded = localDate;
+        }
+
         if (action === 'editOrder') setOrders(orders.map(o => o.id === orderData.id ? orderData : o));
         else setOrders([...orders, orderData]);
+        
         setNewOrder(initialOrderState); setView('admin-list');
         await sendPostRequest(action, orderData);
       };
 
+      // ฟังก์ชันแก้ไขสถานะแบบด่วน
       const handleQuickStatusUpdate = async (id, newStatus) => {
         setOrders(orders.map(o => o.id === id ? { ...o, status: newStatus } : o));
         await sendPostRequest('updateStatus', { id, status: newStatus });
@@ -202,10 +211,7 @@
 
       const handleCustomerSearch = () => {
         if (!customerSearch.trim()) { setHasSearched(false); setFoundOrders([]); return; }
-        // ✨ แก้ไขบั๊กจอขาว: บังคับให้ accountName เป็นข้อความก่อนใช้ toLowerCase ✨
-        const results = orders.filter(order => 
-           String(order.accountName || '').toLowerCase().includes(customerSearch.trim().toLowerCase())
-        );
+        const results = orders.filter(order => String(order.accountName || '').toLowerCase().includes(customerSearch.trim().toLowerCase()));
         setFoundOrders(results); setHasSearched(true);
       };
 
@@ -234,7 +240,6 @@
                       className={`w-[28px] h-[28px] rounded-full flex items-center justify-center transition-all duration-500 border-2 ${isReached ? 'border-white shadow-sm' : 'bg-white border-gray-50 text-gray-200'} ${isCurrent ? 'scale-125 ring-4 ring-pink-100/50' : 'scale-100'}`}
                       style={{ backgroundColor: isReached && !isCurrent ? step.color : 'white' }}
                     >
-                      {/* ✨ แก้ไขบั๊กวงกลมโล่ง: ใส่ไอคอนพร้อมเอฟเฟกต์กระพริบให้สถานะปัจจุบัน ✨ */}
                       {isCurrent ? (
                         <Icon size={14} className="text-pink-500 animate-pulse" />
                       ) : isReached && index < currentIndex ? (
@@ -398,9 +403,7 @@
                     {view === 'admin-list' && (
                       <div className="space-y-3 animate-in fade-in duration-300">
                          <div className="bg-white/90 p-2.5 rounded-[1.5rem] border border-white flex items-center gap-2 shadow-sm backdrop-blur-md">
-                           <Search size={14} className="text-pink-300" />
-                           {/* ✨ แก้ไขบั๊กจอขาวในหน้าแอดมินด้วย ✨ */}
-                           <input className="flex-1 outline-none text-[12px] font-bold bg-transparent" placeholder="Search orders..." value={adminSearch} onChange={(e) => setAdminSearch(e.target.value)} />
+                           <Search size={14} className="text-pink-300" /><input className="flex-1 outline-none text-[12px] font-bold bg-transparent" placeholder="Search orders..." value={adminSearch} onChange={(e) => setAdminSearch(e.target.value)} />
                          </div>
                          <div className="space-y-2 pb-2">{orders.filter(o => String(o.accountName || '').toLowerCase().includes(adminSearch.toLowerCase())).map((order, idx) => (
                             <div key={idx} onClick={() => handleOpenDetail(order)} className="bg-white/95 p-3 rounded-[1.2rem] flex items-center justify-between shadow-sm active:scale-[0.98] cursor-pointer">
@@ -408,7 +411,16 @@
                                  <div className="w-1.5 h-8 rounded-full shrink-0" style={{ backgroundColor: getStatusColor(order.status) }}></div>
                                  <div className="flex flex-col"><p className="text-[9px] font-black text-pink-500 uppercase">#{order.id}</p><p className="font-bold text-[12px] truncate">{order.accountName}</p></div>
                                </div>
-                               <ChevronRight size={14} className="text-gray-200" />
+                               {/* ✨ คืนชีพ Dropdown เปลี่ยนสถานะด่วนให้แล้วค่ะ ✨ */}
+                               <div className="flex items-center gap-1.5 shrink-0">
+                                 <div className="relative" onClick={(e) => e.stopPropagation()}>
+                                   <select className="bg-gray-50/80 text-pink-500 font-black text-[8px] py-1 pl-1.5 pr-4 rounded-md border border-pink-100/50 outline-none appearance-none cursor-pointer max-w-[80px] truncate" value={order.status} onChange={(e) => handleQuickStatusUpdate(order.id, e.target.value)}>
+                                     {statusSteps.map(s => <option key={s.label} value={s.label}>{s.label}</option>)}
+                                   </select>
+                                   <ChevronDown size={8} className="absolute right-1 top-1/2 -translate-y-1/2 text-pink-400 pointer-events-none" />
+                                 </div>
+                                 <ChevronRight size={14} className="text-gray-200" />
+                               </div>
                             </div>
                          ))}</div>
                       </div>
