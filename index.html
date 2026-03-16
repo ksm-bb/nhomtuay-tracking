@@ -93,7 +93,6 @@
       Lock, MessageSquare, LogOut, Info, Save, MapPin, Loader2, Camera
     } from 'https://esm.sh/lucide-react?deps=react@18,react-dom@18';
 
-    // ✨ นำ URL จาก Google Apps Script มาใส่ตรงนี้ ✨
     const API_URL = "https://script.google.com/macros/s/AKfycbxMgBhl8eZAtSjU3TMeRf35nqMnyQUTEBlsD4QEpJ97kESY3OVTTV16wmfzO9iHSW7Jqw/exec"; 
 
     const MyCustomStar = ({ className, size = 24, color = "#FFB7D5", opacity = 1 }) => (
@@ -203,7 +202,10 @@
 
       const handleCustomerSearch = () => {
         if (!customerSearch.trim()) { setHasSearched(false); setFoundOrders([]); return; }
-        const results = orders.filter(order => order.accountName.toLowerCase().includes(customerSearch.trim().toLowerCase()));
+        // ✨ แก้ไขบั๊กจอขาว: บังคับให้ accountName เป็นข้อความก่อนใช้ toLowerCase ✨
+        const results = orders.filter(order => 
+           String(order.accountName || '').toLowerCase().includes(customerSearch.trim().toLowerCase())
+        );
         setFoundOrders(results); setHasSearched(true);
       };
 
@@ -232,7 +234,10 @@
                       className={`w-[28px] h-[28px] rounded-full flex items-center justify-center transition-all duration-500 border-2 ${isReached ? 'border-white shadow-sm' : 'bg-white border-gray-50 text-gray-200'} ${isCurrent ? 'scale-125 ring-4 ring-pink-100/50' : 'scale-100'}`}
                       style={{ backgroundColor: isReached && !isCurrent ? step.color : 'white' }}
                     >
-                      {isReached && !isCurrent && index < currentIndex ? (
+                      {/* ✨ แก้ไขบั๊กวงกลมโล่ง: ใส่ไอคอนพร้อมเอฟเฟกต์กระพริบให้สถานะปัจจุบัน ✨ */}
+                      {isCurrent ? (
+                        <Icon size={14} className="text-pink-500 animate-pulse" />
+                      ) : isReached && index < currentIndex ? (
                         <CheckCircle2 size={14} className="text-white" />
                       ) : (
                         <Icon size={14} className={isReached ? 'text-white' : 'text-gray-200'} />
@@ -374,8 +379,8 @@
                       <div className="bg-white/95 p-6 rounded-[2rem] border border-white shadow-lg space-y-5">
                         <h2 className="text-base font-black text-pink-400 flex items-center gap-2"><PlusCircle size={18} /> {view === 'admin-edit' ? 'แก้ไขรายการ' : 'เพิ่มรายการ'}</h2>
                         <form onSubmit={handleSaveOrder} className="space-y-3">
-                          <div><label className="text-[9px] font-black text-pink-300 ml-2 uppercase">เลขออเดอร์</label><input required className="admin-input py-2 px-3 text-[12px]" placeholder="" value={newOrder.id} onChange={e => setNewOrder({...newOrder, id: e.target.value})} disabled={view === 'admin-edit'} /></div>
-                          <div><label className="text-[9px] font-black text-pink-300 ml-2 uppercase">ชื่อแอคเคาท์</label><input required className="admin-input py-2 px-3 text-[12px]" placeholder="" value={newOrder.accountName} onChange={e => setNewOrder({...newOrder, accountName: e.target.value})} /></div>
+                          <div><label className="text-[9px] font-black text-pink-300 ml-2 uppercase">เลขออเดอร์</label><input required className="admin-input py-2 px-3 text-[12px]" placeholder="เช่น Q75" value={newOrder.id} onChange={e => setNewOrder({...newOrder, id: e.target.value})} disabled={view === 'admin-edit'} /></div>
+                          <div><label className="text-[9px] font-black text-pink-300 ml-2 uppercase">ชื่อแอคเคาท์</label><input required className="admin-input py-2 px-3 text-[12px]" placeholder="เช่น คุณ Alice" value={newOrder.accountName} onChange={e => setNewOrder({...newOrder, accountName: e.target.value})} /></div>
                           <div><label className="text-[9px] font-black text-pink-300 ml-2 uppercase">ช่องทางการขาย</label><div className="relative"><input className="admin-input py-2 px-3 text-[12px]" list="platform-list" placeholder="เลือกหรือพิมพ์ช่องทาง..." value={newOrder.platform} onChange={e => setNewOrder({...newOrder, platform: e.target.value})} /><datalist id="platform-list">{platformList.map((p, i) => <option key={i} value={p} />)}</datalist><ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-pink-300 pointer-events-none" /></div></div>
                           <div><label className="text-[9px] font-black text-pink-300 ml-2 uppercase">รายละเอียดออเดอร์</label><textarea required className="admin-input h-16 py-2 px-3 text-[12px]" placeholder="ระบุรายการสินค้า..." value={newOrder.orderDetail} onChange={e => setNewOrder({...newOrder, orderDetail: e.target.value})} /></div>
                           <div><label className="text-[9px] font-black text-pink-300 ml-2 uppercase">ชื่อผู้รับ</label><input required className="admin-input py-2 px-3 text-[12px]" value={newOrder.recipientName} onChange={e => setNewOrder({...newOrder, recipientName: e.target.value})} /></div>
@@ -393,9 +398,11 @@
                     {view === 'admin-list' && (
                       <div className="space-y-3 animate-in fade-in duration-300">
                          <div className="bg-white/90 p-2.5 rounded-[1.5rem] border border-white flex items-center gap-2 shadow-sm backdrop-blur-md">
-                           <Search size={14} className="text-pink-300" /><input className="flex-1 outline-none text-[12px] font-bold bg-transparent" placeholder="Search orders..." value={adminSearch} onChange={(e) => setAdminSearch(e.target.value)} />
+                           <Search size={14} className="text-pink-300" />
+                           {/* ✨ แก้ไขบั๊กจอขาวในหน้าแอดมินด้วย ✨ */}
+                           <input className="flex-1 outline-none text-[12px] font-bold bg-transparent" placeholder="Search orders..." value={adminSearch} onChange={(e) => setAdminSearch(e.target.value)} />
                          </div>
-                         <div className="space-y-2 pb-2">{orders.filter(o => o.accountName.toLowerCase().includes(adminSearch.toLowerCase())).map((order, idx) => (
+                         <div className="space-y-2 pb-2">{orders.filter(o => String(o.accountName || '').toLowerCase().includes(adminSearch.toLowerCase())).map((order, idx) => (
                             <div key={idx} onClick={() => handleOpenDetail(order)} className="bg-white/95 p-3 rounded-[1.2rem] flex items-center justify-between shadow-sm active:scale-[0.98] cursor-pointer">
                                <div className="flex items-center gap-2.5 flex-1 overflow-hidden">
                                  <div className="w-1.5 h-8 rounded-full shrink-0" style={{ backgroundColor: getStatusColor(order.status) }}></div>
