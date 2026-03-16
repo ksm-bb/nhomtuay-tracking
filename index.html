@@ -93,6 +93,7 @@
       Lock, MessageSquare, LogOut, Info, Save, MapPin, Loader2, Camera
     } from 'https://esm.sh/lucide-react?deps=react@18,react-dom@18';
 
+    // ✨ นำ URL จาก Google Apps Script มาใส่ตรงนี้ ✨
     const API_URL = "https://script.google.com/macros/s/AKfycbxMgBhl8eZAtSjU3TMeRf35nqMnyQUTEBlsD4QEpJ97kESY3OVTTV16wmfzO9iHSW7Jqw/exec"; 
 
     const MyCustomStar = ({ className, size = 24, color = "#FFB7D5", opacity = 1 }) => (
@@ -231,9 +232,7 @@
                       className={`w-[28px] h-[28px] rounded-full flex items-center justify-center transition-all duration-500 border-2 ${isReached ? 'border-white shadow-sm' : 'bg-white border-gray-50 text-gray-200'} ${isCurrent ? 'scale-125 ring-4 ring-pink-100/50' : 'scale-100'}`}
                       style={{ backgroundColor: isReached && !isCurrent ? step.color : 'white' }}
                     >
-                      {isCurrent ? (
-                        <img src="https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3YmdwdzBjbml0N3h1eWlqemQxMTdhN2xtanIxMzU0Mnk2cGEwaXRiayZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/0rrazFIa81ovX1ykyZ/giphy.gif" alt="Active" className="w-6 h-6 object-contain" />
-                      ) : isReached && index < currentIndex ? (
+                      {isReached && !isCurrent && index < currentIndex ? (
                         <CheckCircle2 size={14} className="text-white" />
                       ) : (
                         <Icon size={14} className={isReached ? 'text-white' : 'text-gray-200'} />
@@ -267,19 +266,17 @@
                   <div className="flex flex-col">
                     <div className="flex items-center gap-1">
                       <h1 className="text-lg font-black tracking-widest text-[#FFB7D5] uppercase">nhomtuay</h1>
-                      {/* ขยาย GIF ดาวให้ใหญ่จุใจตามสั่ง */}
-                      <img src="https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3aXgxdncxOGR6bzhrbGRrbmVlbWVtemZtNTN3MXg3MndpbnpjYWM0ZiZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/3LWy5senb4QFCIqgYd/giphy.gif" alt="Sparkles" className="w-12 h-12 object-contain -ml-2 -mt-1" />
+                      {/* ✨ เปลี่ยนเป็นรูปกล่องของขวัญอันใหม่ตามที่สั่งค่ะ ✨ */}
+                      <img src="https://i.ibb.co/5g1RMWR2/28-gift-box.gif" alt="Gift Box" className="w-10 h-10 object-contain -ml-1 -mt-1" />
                     </div>
-                    <p className="text-[9px] font-bold text-[#D8BFD8] tracking-[0.2em] uppercase mt-[-10px]">ระบบติดตามสินค้า</p>
+                    <p className="text-[9px] font-bold text-[#D8BFD8] tracking-[0.2em] uppercase mt-[-6px]">ระบบติดตามสินค้า</p>
                   </div>
                   <div className="w-10 h-10 rounded-full bg-white border-2 border-pink-100 shadow-inner flex items-center justify-center overflow-hidden shrink-0">
-                    {/* ใส่ลิงก์รูปโปรไฟล์ของคุณได้เลย */}
                     <img src="https://i.ibb.co/3mG26Y8h/649334019-3501023216721554-4674372379976090810-n.jpg" alt="Profile" className="w-full h-full object-cover" />
                   </div>
                 </div>
               </header>
 
-              {/* แถบ News คลีน ๆ ไม่มี GIF แล้วค่ะ */}
               <div className="mx-5 sm:mx-7 mb-4 z-20">
                 <div className="shrink-0 h-[40px] bg-white rounded-2xl flex items-center px-2 overflow-hidden shadow-sm border border-white/80 w-full">
                   <div className="flex items-center gap-1.5 bg-[#FFB7D5] text-white px-2.5 py-1 rounded-xl shrink-0 border border-white/50 shadow-sm z-20 relative">
@@ -295,7 +292,7 @@
               <main className="flex-1 overflow-y-auto px-5 sm:px-7 pb-28 custom-scrollbar relative z-20">
                 {isLoading ? (
                   <div className="flex flex-col items-center justify-center h-full pb-10">
-                    <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExN3R5anNmajVzbnVxY2hwMnFvdmduNTN0YmM1ZGdicDV0MmtodGs1cSZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/EGNi09y1CXeyA/giphy.gif" alt="Loading" className="w-20 h-20 object-contain" />
+                    <Loader2 size={40} className="text-pink-300 animate-spin mb-3" />
                     <p className="text-[10px] font-black text-pink-400 uppercase tracking-widest">Loading data...</p>
                   </div>
                 ) : (
@@ -354,7 +351,9 @@
                                 </div>
                               )) : (
                               <div className="text-center py-12 bg-white/80 rounded-[2.5rem] shadow-sm">
-                                 <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExN3R5anNmajVzbnVxY2hwMnFvdmduNTN0YmM1ZGdicDV0MmtodGs1cSZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/kDwgqm3RQBPAX0Chny/giphy.gif" alt="Not Found" className="w-20 h-20 mx-auto mb-2" />
+                                 <div className="w-16 h-16 bg-pink-100 text-pink-300 rounded-full flex items-center justify-center mx-auto mb-3 shadow-inner border border-white">
+                                   <Search size={28} />
+                                 </div>
                                  <p className="text-[11px] font-black text-pink-400 italic">ไม่พบข้อมูลออเดอร์นะคะ 😿</p>
                               </div>
                             )}
@@ -364,7 +363,9 @@
                     )}
                     {view === 'login' && (
                       <div className="bg-white/95 p-7 rounded-[2.5rem] text-center shadow-lg mt-8 animate-in fade-in zoom-in-95">
-                        <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExN3R5anNmajVzbnVxY2hwMnFvdmduNTN0YmM1ZGdicDV0MmtodGs1cSZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/JqK1kph1aSkCEuvAeN/giphy.gif" alt="Admin" className="w-24 h-24 mx-auto mb-2" />
+                        <div className="w-20 h-20 bg-pink-100 text-pink-400 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-inner border border-white">
+                          <User size={40} />
+                        </div>
                         <h2 className="text-base font-black text-pink-400 mb-6 uppercase tracking-[0.2em]">Admin Login</h2>
                         <input type="password" placeholder="Password" className="admin-input w-full text-center py-3 mb-5 font-bold shadow-inner" value={loginInput} onChange={(e) => setLoginInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleAdminLogin()} />
                         <button onClick={handleAdminLogin} className="w-full bg-pink-400 text-white font-black py-3.5 rounded-2xl active:scale-95 shadow-md shadow-pink-200 tracking-widest text-[13px]">LOGIN</button>
@@ -435,9 +436,6 @@
               </main>
 
               <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center justify-center w-full px-5 z-40 pointer-events-none">
-                {/* น้องแมว Mascot ย้ายมาอยู่ขวาล่างตรงนี้อย่างปลอดภัย */}
-                <img src="https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3bm1nNGd2ODNzN2J5aGZkaDh6MGMyc2p1c3dpNWJ0N3J2YzczcGFocSZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/rI2Stk88cPAhkFrN4q/giphy.gif" alt="Mascot" className="absolute bottom-[3.5rem] right-4 w-14 h-14 object-contain drop-shadow-sm" />
-                
                 <nav className="bg-white/95 backdrop-blur-2xl h-[3.2rem] rounded-full shadow-2xl flex items-center justify-center gap-1.5 px-2 border border-pink-50 pointer-events-auto">
                   <button onClick={() => { setView('customer'); setCustomerSearch(''); setHasSearched(false); setFoundOrders([]); }} className={`flex items-center justify-center w-9 h-9 rounded-full transition-all ${view === 'customer' ? 'text-white bg-pink-400 shadow-md scale-110' : 'text-pink-300 hover:bg-pink-50'}`}><Home size={15} fill={view === 'customer' ? 'currentColor' : 'none'} /></button>
                   <div className="w-[1px] h-4 bg-pink-100/50 mx-0.5"></div>
